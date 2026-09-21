@@ -1,0 +1,227 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* =====================================================================
+       GRANTH LAPTOP HUB — Firestore security rules
+       ---------------------------------------------------------------------
+       Mirrors src/lib/permissions.ts. Hiding a button in the UI is NOT a
+       security control: every restriction below is enforced independently
+       here, so a Staff/Manager account cannot bypass it by typing a URL or
+       calling Firestore directly.
+
+       Roles (from the custom claim set by the server, or adminUsers/{uid}):
+         superadmin — everything, including administrator accounts
+         manager    — all operational/content data, NO admin-user management
+         staff      — order processing + read-only catalogue
+
+       Customers may only ever touch their own /users/{uid} subtree.
+       Admin-only data is never publicly readable.
+       ===================================================================== */
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isPrimaryAdmin() {
+      return signedIn() && request.auth.uid == "qdVg8nA0dVaA7SxE9QrIRzOXiz23";
+    }
+
+    function adminDoc() {
+      return get(/databases/$(database)/documents/adminUsers/$(request.auth.uid)).data;
+    }
+
+    function adminExists() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/adminUsers/$(request.auth.uid));
+    }
+
+    /** Any active administrator (role-agnostic). */
+    function isAdmin() {
+      return isPrimaryAdmin() || (adminExists() && adminDoc().active == true);
+    }
+
+    /**
+     * Role resolution. The custom claim is authoritative when present
+     * (it is set server-side by /api/admin/create-user | update-user);
+     * otherwise the adminUsers document is used.
+     */
+    function roleOf() {
+      return isPrimaryAdmin()
+        ? 'superadmin'
+        : (request.auth.token.role != null
+            ? request.auth.token.role
+            : (adminExists() ? adminDoc().role : 'none'));
+    }
+
+    function isSuperAdmin() {
+      return isPrimaryAdmin() || (isAdmin() && roleOf() == 'superadmin');
+    }
+
+    /** Manager or above — full operational/content access. */
+    function isManager() {
+      return isSuperAdmin() || (isAdmin() && roleOf() == 'manager');
+    }
+
+    function isStaff() {
+      return isAdmin() && roleOf() == 'staff';
+    }
+
+    /* ---------------- Public catalog & content --------------------------
+       Public read (the storefront needs it for anonymous visitors).
+       Staff may read but NOT write; Manager and above may write.
+       --------------------------------------------------------------------- */
+
+    match /products/{document=**} {
+      allow read: if true;
+      allow create, update: if isManager();
+      allow delete: if isManager();          // staff explicitly cannot delete
+    }
+
+    match /categories/{document=**} {
+      allow read: if true;
+      allow write: if isManager();
+    }
+
+    match /brands/{document=**} {
+      allow read: if true;
+      allow write: if isManager();
+    }
+
+    match /blogPosts/{document=**} {
+      allow read: if true;
+      allow write: if isManager();
+    }
+
+    match /videos/{document=**} {
+      allow read: if true;
+      allow write: if isManager();
+    }
+
+    match /offers/{document=**} {
+      allow read: if true;
+      allow write: if isManager();
+    }
+
+    /* siteSettings holds main (business/branding), seo and firstOrderReward.
+       All three must be publicly readable — the customer website renders them
+       for anonymous visitors. Only Manager+ may change them. */
+    match /siteSettings/{document=**} {
+      allow read: if true;
+      allow write: if isManager();
+    }
+
+    match /homepage/{document=**} {
+      allow read: if true;
+      allow write: if isManager();
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if signedIn();                 // logged-in customers only
+      allow update, delete: if isManager();        // staff is read-only
+    }
+
+    /* ---------------- Coupons: validate one code, never browse ----------- */
+
+    match /coupons/{couponId} {
+      allow get: if true;            // storefront validates a typed code
+      allow list: if isManager();    // never publicly discoverable
+      allow write: if isManager();   // staff cannot manage coupons
+    }
+
+    /* ---------------- Administrator accounts — SUPER ADMIN ONLY ---------- */
+
+    match /adminUsers/{userId} {
+      // Any signed-in user may read ONLY their own record — this is how the
+      // panel resolves the caller's own role at login.
+      allow get: if isSuperAdmin() || (signedIn() && request.auth.uid == userId);
+      allow list: if isSuperAdmin();
+      // Managers and staff can never create, modify or delete admin accounts.
+      allow write: if isSuperAdmin();
+    }
+
+    /* ---------------- Enquiries ------------------------------------------ */
+
+    match /enquiries/{enquiryId} {
+      allow create: if true;                       // public contact forms
+      allow read: if isAdmin();                    // staff may read & work them
+      allow update: if isAdmin();
+      allow delete: if isManager();
+    }
+
+    /* ---------------- Activity log — append only ------------------------- */
+
+    match /activityLog/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;              // immutable history
+    }
+
+    /* ---------------- Sequential order number counter -------------------- */
+
+    match /settings/orderCounter {
+      // Incremented by the customer checkout transaction; holds no private data.
+      allow read: if signedIn();
+      allow write: if signedIn();
+    }
+
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isManager();
+    }
+
+    /* ---------------- Customer data --------------------------------------
+       A customer may read/write ONLY their own document and subcollections.
+       Admins may read every customer (Customer Management + Analytics) — note
+       the explicit `list`, which a per-document condition cannot satisfy for
+       collection queries. Only Manager+ may modify or delete customer data.
+       --------------------------------------------------------------------- */
+
+    match /users/{userId} {
+      allow get: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow list: if isAdmin();
+      allow create: if signedIn() && request.auth.uid == userId;
+      allow update: if signedIn() && (request.auth.uid == userId || isManager());
+      allow delete: if isSuperAdmin();
+
+      match /addresses/{addressId} {
+        allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+        allow write: if signedIn() && (request.auth.uid == userId || isManager());
+      }
+
+      match /orders/{orderId} {
+        allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+        allow create: if signedIn() && request.auth.uid == userId;
+        // Staff may update orders (status processing); nobody but a super
+        // admin may delete one.
+        allow update: if signedIn() && (request.auth.uid == userId || isAdmin());
+        allow delete: if isSuperAdmin();
+      }
+
+      match /rewards/{rewardId} {
+        allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+        allow write: if signedIn() && (request.auth.uid == userId || isManager());
+      }
+
+      match /couponUsage/{couponCode} {
+        allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+        allow write: if signedIn() && (request.auth.uid == userId || isManager());
+      }
+    }
+
+    /* Root order mirror (legacy / some checkout builds). */
+    match /orders/{orderId} {
+      allow get: if signedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
+      allow list: if isAdmin();
+      allow create: if signedIn();
+      allow update: if isAdmin();
+      allow delete: if isSuperAdmin();
+    }
+
+    /* Collection-group read of every customer's orders — admins only. */
+    match /{path=**}/orders/{orderId} {
+      allow read: if isAdmin();
+    }
+  }
+}

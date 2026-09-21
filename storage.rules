@@ -1,0 +1,13 @@
+// Firebase Storage is NOT used by this project.
+// All CMS images are hosted on ImgBB (via POST /api/upload-image) and the
+// resulting URLs are stored in Firestore. Firebase provides Auth + Firestore only.
+// These rules intentionally deny everything so no Storage dependency or
+// upgrade prompt is required.
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
