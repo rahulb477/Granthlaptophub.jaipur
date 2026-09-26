@@ -29,25 +29,36 @@ const IMG = {
   store: "https://images.pexels.com/photos/17565491/pexels-photo-17565491.jpeg?auto=compress&cs=tinysrgb&fit=crop&h=627&w=1200",
 };
 
+/**
+ * FALLBACK DEFAULTS for the legacy Postgres settings layer (/api/site,
+ * /api/settings/[key]). The live customer website reads these settings from
+ * Firestore `siteSettings` (edited via the admin panel) — the values here
+ * only apply if the legacy Postgres layer is re-enabled.
+ *
+ * Branding reconciled to Granth Laptop Hub, Jaipur (see src/lib/brand.ts).
+ * TODO(owner): confirm current email, street address and year established —
+ * no in-repo source exists for those, so the last known email was kept and
+ * the address was reduced to name + city + state.
+ */
 export const DEFAULTS: Record<SettingKey, any> = {
   site: {
-    businessName: "Maa Karni Computer",
-    city: "Jodhpur",
-    tagline: "Jodhpur's trusted laptop destination",
-    phone: "+91 76656 18720",
-    whatsapp: "917665618720",
+    businessName: "Granth Laptop Hub",
+    city: "Jaipur",
+    tagline: "Jaipur's trusted laptop destination",
+    phone: "+91 74130 70733",
+    whatsapp: "917413070733",
     email: "info@maakarnicomputer.in",
-    address: "Maa Karni Computer, Sardar Market, Jodhpur, Rajasthan 342001",
+    address: "Granth Laptop Hub, Jaipur, Rajasthan",
     hours: [
       { day: "Monday – Saturday", time: "10:30 AM – 8:30 PM" },
       { day: "Sunday", time: "11:00 AM – 2:00 PM" },
     ],
-    mapUrl: "https://www.google.com/maps/search/?api=1&query=Sardar+Market+Jodhpur",
-    instagramUrl: "https://www.instagram.com/laptopmaakarnicomputerjodhpur",
-    instagramHandle: "@laptopmaakarnicomputerjodhpur",
+    mapUrl: "https://www.google.com/maps/search/?api=1&query=Granth+Laptop+Hub+Jaipur",
+    instagramUrl: "https://www.instagram.com/granthlaptophub",
+    instagramHandle: "@granthlaptophub",
     instagramVisible: true,
-    logoUrl: "",
-    favicon: "",
+    logoUrl: "/brand/granth-logo.png",
+    favicon: "/brand/granth-logo.png",
     currency: "₹",
   },
   appearance: {
@@ -63,16 +74,16 @@ export const DEFAULTS: Record<SettingKey, any> = {
     buttonStyle: "gold",
   },
   seo: {
-    siteTitle: "Maa Karni Computer Jodhpur – Genuine Laptops at Best Prices",
+    siteTitle: "Granth Laptop Hub Jaipur – Genuine Laptops at Best Prices",
     metaDescription:
-      "Buy new & refurbished laptops in Jodhpur at Maa Karni Computer. Genuine billed products, warranty assistance, EMI & COD. Dell, HP, Lenovo, Apple, Asus.",
-    keywords: "laptops jodhpur, laptop store jodhpur, refurbished laptops jodhpur, dell hp lenovo apple jodhpur",
+      "Buy new & refurbished laptops in Jaipur at Granth Laptop Hub. Genuine billed products, warranty assistance, EMI & COD. Dell, HP, Lenovo, Apple, Asus.",
+    keywords: "laptops jaipur, laptop store jaipur, refurbished laptops jaipur, dell hp lenovo apple jaipur",
     ogImage: IMG.mac,
     pages: {
       home: { title: "", desc: "" },
-      shop: { title: "Shop Laptops in Jodhpur", desc: "" },
-      about: { title: "About Maa Karni Computer Jodhpur", desc: "" },
-      contact: { title: "Contact Maa Karni Computer Jodhpur", desc: "" },
+      shop: { title: "Shop Laptops in Jaipur", desc: "" },
+      about: { title: "About Granth Laptop Hub Jaipur", desc: "" },
+      contact: { title: "Contact Granth Laptop Hub Jaipur", desc: "" },
       compare: { title: "Compare Laptops", desc: "" },
     },
   },
@@ -81,14 +92,14 @@ export const DEFAULTS: Record<SettingKey, any> = {
     items: [
       { id: "t1", icon: "wallet", text: "EMI available on select laptops" },
       { id: "t2", icon: "badge", text: "100% genuine, billed products" },
-      { id: "t3", icon: "shield", text: "Warranty assistance in Jodhpur" },
-      { id: "t4", icon: "store", text: "Trusted local store since 2010" },
+      { id: "t3", icon: "shield", text: "Warranty assistance in Jaipur" },
+      { id: "t4", icon: "store", text: "Trusted local store in Jaipur" },
     ],
   },
   header: {
     enabled: true,
-    siteName: "MAA KARNI COMPUTER",
-    tagline: "J O D H P U R",
+    siteName: "GRANTH LAPTOP HUB",
+    tagline: "J A I P U R",
     searchPlaceholder: "Search laptops, brands, specs…",
     showSearch: true,
     showCart: true,
@@ -104,11 +115,11 @@ export const DEFAULTS: Record<SettingKey, any> = {
   },
   hero: {
     enabled: true,
-    badge: "Maa Karni Computer · Sardar Market, Jodhpur",
+    badge: "Granth Laptop Hub · Jaipur",
     heading: "Laptops that earn their keep, at prices that make sense",
     highlight: "prices that make sense",
     description:
-      "New and refurbished laptops from Dell, HP, Lenovo, Apple and Asus — genuine billing, warranty assistance and honest advice, from Jodhpur's trusted computer store.",
+      "New and refurbished laptops from Dell, HP, Lenovo, Apple and Asus — genuine billing, warranty assistance and honest advice, from Jaipur's trusted computer store.",
     trust: [
       { id: "h1", icon: "badge", title: "Genuine", desc: "Billed products", visible: true },
       { id: "h2", icon: "shield", title: "Warranty", desc: "Full assistance", visible: true },
@@ -141,7 +152,7 @@ export const DEFAULTS: Record<SettingKey, any> = {
     enabled: true,
     eyebrow: "Customer favourites",
     heading: "Best Sellers",
-    description: "The laptops Jodhpur keeps coming back for.",
+    description: "The laptops Jaipur keeps coming back for.",
     viewAllText: "View All Laptops",
     viewAllHref: "/shop",
     mode: "auto",
@@ -185,7 +196,7 @@ export const DEFAULTS: Record<SettingKey, any> = {
     enabled: true,
     eyebrow: "Tech tips & guides",
     heading: "Guides that save you money",
-    description: "Buying advice, comparisons and care tips from the Maa Karni desk.",
+    description: "Buying advice, comparisons and care tips from the Granth Laptop Hub desk.",
     count: 3,
     featuredOnly: false,
   },
@@ -195,7 +206,7 @@ export const DEFAULTS: Record<SettingKey, any> = {
     returnText: "7-day replacement for manufacturing defects, subject to brand terms.",
     returnDays: "7 days",
     codEnabled: true,
-    codText: "Cash on Delivery available in Jodhpur",
+    codText: "Cash on Delivery available in Jaipur",
     emiEnabled: true,
     emiText: "No-cost & card EMI options available",
     genuineText: "100% genuine, billed products",
@@ -242,10 +253,10 @@ export const DEFAULTS: Record<SettingKey, any> = {
     ],
   },
   footer: {
-    brandName: "MAA KARNI COMPUTER",
-    cityLabel: "Sardar Market, Jodhpur",
+    brandName: "GRANTH LAPTOP HUB",
+    cityLabel: "Jaipur",
     description:
-      "Jodhpur's trusted destination for genuine laptops — new & refurbished, with warranty assistance, EMI and local service support.",
+      "Jaipur's trusted destination for genuine laptops — new & refurbished, with warranty assistance, EMI and local service support.",
     trust: [
       { icon: "badge", text: "Genuine Products" },
       { icon: "shield", text: "Warranty Assistance" },
@@ -271,35 +282,35 @@ export const DEFAULTS: Record<SettingKey, any> = {
       { label: "Compare Laptops", href: "/compare" },
       { label: "Cart", href: "/cart" },
     ],
-    copyright: "© 2024 Maa Karni Computer, Jodhpur. All rights reserved.",
+    copyright: "© 2026 Granth Laptop Hub, Jaipur. All rights reserved.",
   },
   pages: {
     about: {
-      heading: "The store Jodhpur trusts for laptops",
+      heading: "The store Jaipur trusts for laptops",
       description:
-        "Maa Karni Computer has served students, professionals and businesses across Jodhpur with genuine laptops, honest pricing and service that keeps working after the sale.",
+        "Granth Laptop Hub has served students, professionals and businesses across Jaipur with genuine laptops, honest pricing and service that keeps working after the sale.",
       story: [
-        "What began as a small counter in Sardar Market has grown into one of Jodhpur's most trusted names in laptops. Every machine we sell — new or refurbished — passes through our own hands before it reaches yours.",
-        "We stock business workhorses, student-friendly notebooks and gaming laptops from Dell, HP, Lenovo, Apple and Asus. If you can't find what you need on the website, call us — if it exists, we can get it in Jodhpur within days.",
+        "Every machine we sell — new or refurbished — passes through our own hands before it reaches yours.",
+        "We stock business workhorses, student-friendly notebooks and gaming laptops from Dell, HP, Lenovo, Apple and Asus. If you can't find what you need on the website, call us — if it exists, we can get it in Jaipur within days.",
       ],
       trustPoints: [
-        { icon: "store", title: "Local & Trusted", desc: "A physical store in Sardar Market you can walk into anytime." },
+        { icon: "store", title: "Local & Trusted", desc: "A physical store in Jaipur you can walk into anytime." },
         { icon: "badge", title: "Genuine Billing", desc: "Every product billed with proper paperwork and brand warranty." },
         { icon: "wrench", title: "Service Desk", desc: "Repairs, upgrades and data migration after the sale." },
         { icon: "wallet", title: "EMI & Exchange", desc: "Easy EMI options and honest exchange for your old machine." },
       ],
       info: {
-        established: "2010",
+        established: "",
         stock: "New & refurbished stock",
         support: "In-store service desk",
-        delivery: "Same-day Jodhpur delivery",
+        delivery: "Same-day Jaipur delivery",
       },
       image: IMG.store,
     },
     contact: {
       heading: "Visit the store or get in touch",
       description:
-        "Call, WhatsApp or drop by Sardar Market. We answer faster on WhatsApp during store hours.",
+        "Call, WhatsApp or visit the store in Jaipur. We answer faster on WhatsApp during store hours.",
       formFields: { name: true, phone: true, email: true, message: true },
       formSuccess: "Thanks! Your enquiry is logged — we'll reach out within store hours.",
       profileFields: { name: true, phone: true, city: true },
@@ -312,8 +323,8 @@ export const DEFAULTS: Record<SettingKey, any> = {
     suggestions: ["i5 16GB", "Refurbished", "Gaming", "MacBook", "Under 40K"],
   },
   whatsapp: {
-    number: "917665618720",
-    defaultMessage: "Hi Maa Karni Computer! I have a question about your laptops.",
+    number: "917413070733",
+    defaultMessage: "Hi Granth Laptop Hub! I have a question about your laptops.",
     productMessage: "Hi! I'm interested in {product} ({price}). Is it available?",
     ctaText: "Chat on WhatsApp",
     floating: true,

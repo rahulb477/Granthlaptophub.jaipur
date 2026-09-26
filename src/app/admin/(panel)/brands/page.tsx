@@ -30,8 +30,24 @@ export default function BrandsPage() {
     }
   };
 
+  // Mount-time load: only starts the module-level Firestore read; state is
+  // updated inside the promise callbacks (the pattern accepted by
+  // react-hooks/set-state-in-effect). The save/delete handlers use loadAll.
   useEffect(() => {
-    loadAll();
+    let on = true;
+    getBrands()
+      .then((data) => {
+        if (on) setBrands(data);
+      })
+      .catch((err: any) => {
+        if (on) setError("Failed to load brands: " + err.message);
+      })
+      .finally(() => {
+        if (on) setLoading(false);
+      });
+    return () => {
+      on = false;
+    };
   }, []);
 
   const openNew = () => {

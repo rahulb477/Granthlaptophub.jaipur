@@ -76,8 +76,24 @@ function OffersTab() {
     }
   };
 
+  // Mount-time load: only starts the module-level Firestore read; state is
+  // updated inside the promise callbacks (the pattern accepted by
+  // react-hooks/set-state-in-effect). The save/delete handlers use loadAll.
   useEffect(() => {
-    loadAll();
+    let on = true;
+    getOffers()
+      .then((data) => {
+        if (on) setOffers(data);
+      })
+      .catch((err: any) => {
+        if (on) setError("Load error: " + err.message);
+      })
+      .finally(() => {
+        if (on) setLoading(false);
+      });
+    return () => {
+      on = false;
+    };
   }, []);
 
   const openNew = () => {
@@ -152,7 +168,7 @@ function OffersTab() {
         {loading ? (
           <div className="p-12 text-center text-xs text-slate-400">Loading offers from Firestore...</div>
         ) : offers.length === 0 ? (
-          <div className="p-12 text-center text-xs text-slate-400">No offers found. Click "+ Add New Offer" to create one.</div>
+          <div className="p-12 text-center text-xs text-slate-400">No offers found. Click &quot;+ Add New Offer&quot; to create one.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">
@@ -265,8 +281,24 @@ function CouponsTab() {
     }
   };
 
+  // Mount-time load: only starts the module-level Firestore read; state is
+  // updated inside the promise callbacks (the pattern accepted by
+  // react-hooks/set-state-in-effect). The save/delete handlers use loadAll.
   useEffect(() => {
-    loadAll();
+    let on = true;
+    getCoupons()
+      .then((data) => {
+        if (on) setCoupons(data);
+      })
+      .catch((err: any) => {
+        if (on) setError("Load error: " + err.message);
+      })
+      .finally(() => {
+        if (on) setLoading(false);
+      });
+    return () => {
+      on = false;
+    };
   }, []);
 
   const openNew = () => {
@@ -355,7 +387,7 @@ function CouponsTab() {
         {loading ? (
           <div className="p-12 text-center text-xs text-slate-400">Loading coupons from Firestore...</div>
         ) : coupons.length === 0 ? (
-          <div className="p-12 text-center text-xs text-slate-400">No custom coupons found. Click "+ Add New Coupon" to create one.</div>
+          <div className="p-12 text-center text-xs text-slate-400">No custom coupons found. Click &quot;+ Add New Coupon&quot; to create one.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left">

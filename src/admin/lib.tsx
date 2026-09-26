@@ -22,14 +22,16 @@ export function useFetch<T = any>(url: string | null, deps: any[] = []) {
   useEffect(() => {
     if (!url) return;
     let on = true;
-    setLoading(true);
-    setError("");
     fetch(url)
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
-      .then((d) => on && setData(d))
+      .then((d) => {
+        if (!on) return;
+        setError("");
+        setData(d);
+      })
       .catch((e) => on && setError(e.message))
       .finally(() => on && setLoading(false));
     return () => {
@@ -47,9 +49,15 @@ export function useSetting<T = any>(key: string) {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [err, setErr] = useState("");
-  useEffect(() => {
+  // Sync the editable value from freshly fetched data WITHOUT an effect —
+  // React's "store information from previous renders" pattern: comparing
+  // during render and calling setState triggers an immediate re-render
+  // before commit (no cascading effect renders).
+  const [prevData, setPrevData] = useState<{ value: T } | null>(null);
+  if (data !== prevData) {
+    setPrevData(data);
     if (data) setV(data.value);
-  }, [data]);
+  }
   const save = useCallback(
     async (val: T) => {
       setSaving(true);

@@ -34,8 +34,29 @@ export default function AdminProductsPage() {
     }
   };
 
+  // Mount-time load: only starts the module-level Firestore read; state is
+  // updated inside the promise callbacks (the pattern accepted by
+  // react-hooks/set-state-in-effect). The refresh handler uses loadProducts.
   useEffect(() => {
-    loadProducts();
+    let on = true;
+    getProducts()
+      .then((list) => {
+        if (on) {
+          setError("");
+          setProducts(list);
+        }
+      })
+      .catch((err: any) => {
+        if (!on) return;
+        console.error("Failed to load products:", err);
+        setError("Failed to load products from Firestore: " + (err.message || ""));
+      })
+      .finally(() => {
+        if (on) setLoading(false);
+      });
+    return () => {
+      on = false;
+    };
   }, []);
 
   const handleDelete = async (id: string, name: string) => {
@@ -177,7 +198,7 @@ export default function AdminProductsPage() {
               <option value="">All Sections</option>
               <option value="bestSellers">Best Sellers Section</option>
               <option value="trending">Trending Laptops Section</option>
-              <option value="spotlight">Today's Spotlight (Deal of the Day)</option>
+              <option value="spotlight">Today&apos;s Spotlight (Deal of the Day)</option>
               <option value="catalog">Regular Catalog Only</option>
             </select>
           </div>
@@ -230,7 +251,7 @@ export default function AdminProductsPage() {
         ) : filtered.length === 0 ? (
           <div className="p-12 text-center text-xs text-slate-400 space-y-2">
             <p className="font-semibold text-slate-700">No products match your criteria.</p>
-            <p>Click "+ Add New Product" to add a new laptop directly to the Firestore database.</p>
+            <p>Click &quot;+ Add New Product&quot; to add a new laptop directly to the Firestore database.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -331,7 +352,7 @@ export default function AdminProductsPage() {
                         <option value="">None (Catalog only)</option>
                         <option value="bestSellers">⭐ Best Sellers</option>
                         <option value="trending">🔥 Trending Laptops</option>
-                        <option value="spotlight">🌟 Today's Spotlight</option>
+                        <option value="spotlight">🌟 Today&apos;s Spotlight</option>
                       </select>
                     </td>
 

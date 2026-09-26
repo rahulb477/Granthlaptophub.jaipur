@@ -49,8 +49,35 @@ export default function OrdersAdminPage() {
     }
   };
 
+  // Mount-time load: only starts the module-level Firestore reads; state is
+  // updated inside the promise callbacks (the pattern accepted by
+  // react-hooks/set-state-in-effect). The refresh handler uses loadOrders.
   useEffect(() => {
-    loadOrders();
+    let on = true;
+    getAllCustomerOrders()
+      .then((data) => {
+        if (!on) return;
+        setError("");
+        setOrders(data);
+      })
+      .catch((err: any) => {
+        if (!on) return;
+        console.error("Load orders error:", err);
+        setError(err?.message || "Could not read orders from Firestore.");
+      })
+      .finally(() => {
+        if (on) setLoading(false);
+      });
+    getOrderCounterState()
+      .then((c) => {
+        if (on) setCounter(c);
+      })
+      .catch(() => {
+        if (on) setCounter(null);
+      });
+    return () => {
+      on = false;
+    };
   }, []);
 
   const handleStatusChange = async (order: UserOrder, newStatus: string) => {

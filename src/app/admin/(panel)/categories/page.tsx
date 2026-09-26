@@ -31,8 +31,24 @@ export default function CategoriesPage() {
     }
   };
 
+  // Mount-time load: only starts the module-level Firestore read; state is
+  // updated inside the promise callbacks (the pattern accepted by
+  // react-hooks/set-state-in-effect). The save/delete handlers use loadAll.
   useEffect(() => {
-    loadAll();
+    let on = true;
+    getCategories()
+      .then((data) => {
+        if (on) setCategories(data);
+      })
+      .catch((err: any) => {
+        if (on) setError("Failed to load categories: " + err.message);
+      })
+      .finally(() => {
+        if (on) setLoading(false);
+      });
+    return () => {
+      on = false;
+    };
   }, []);
 
   const openNew = () => {
@@ -159,7 +175,7 @@ export default function CategoriesPage() {
           <div className="p-12 text-center text-xs text-slate-400">Loading categories from Firestore...</div>
         ) : categories.length === 0 ? (
           <div className="p-12 text-center text-xs text-slate-400">
-            No categories found. Click "+ Add New Category" to create one with a direct image upload.
+            No categories found. Click &quot;+ Add New Category&quot; to create one with a direct image upload.
           </div>
         ) : (
           <div className="overflow-x-auto">
