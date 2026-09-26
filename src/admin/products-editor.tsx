@@ -113,12 +113,11 @@ export function ProductsEditor({ id }: { id?: string }) {
       .catch(() => {});
   }, []);
 
-  // Load existing product
+  // Load existing product. `loading` already starts as `!isNew`, so the
+  // new-product path needs no state update; the read result is applied in
+  // the promise callback (react-hooks/set-state-in-effect pattern).
   useEffect(() => {
-    if (isNew) {
-      setLoading(false);
-      return;
-    }
+    if (isNew) return;
 
     getProduct(id!)
       .then((p) => {
@@ -999,10 +998,10 @@ export function ProductsEditor({ id }: { id?: string }) {
                 <option value="">None (Catalog view only)</option>
                 <option value="bestSellers">Best Sellers Section</option>
                 <option value="trending">Trending Laptops Section</option>
-                <option value="spotlight">Today's Spotlight (Live Deal)</option>
+                <option value="spotlight">Today&apos;s Spotlight (Live Deal)</option>
               </select>
               <p className="text-[11px] text-slate-400 mt-1">
-                The customer website queries Firestore: <code className="text-slate-600">where("section", "==", "bestSellers")</code> etc.
+                The customer website queries Firestore: <code className="text-slate-600">where(&quot;section&quot;, &quot;==&quot;, &quot;bestSellers&quot;)</code> etc.
               </p>
             </div>
 
@@ -1020,7 +1019,7 @@ export function ProductsEditor({ id }: { id?: string }) {
                   }
                   className="rounded text-amber-600 focus:ring-amber-500"
                 />
-                <span>Set as "Deal of the Day" / Spotlight</span>
+                <span>Set as &quot;Deal of the Day&quot; / Spotlight</span>
               </label>
 
               <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">

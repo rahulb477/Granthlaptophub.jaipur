@@ -33,8 +33,24 @@ export default function VideosAdminPage() {
     }
   };
 
+  // Mount-time load: only starts the module-level Firestore read; state is
+  // updated inside the promise callbacks (the pattern accepted by
+  // react-hooks/set-state-in-effect). The save/delete handlers use loadAll.
   useEffect(() => {
-    loadAll();
+    let on = true;
+    getVideos()
+      .then((data) => {
+        if (on) setVideos(data);
+      })
+      .catch((err: any) => {
+        if (on) setError("Load error: " + err.message);
+      })
+      .finally(() => {
+        if (on) setLoading(false);
+      });
+    return () => {
+      on = false;
+    };
   }, []);
 
   const openNew = () => {

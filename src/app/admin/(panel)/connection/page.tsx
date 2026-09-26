@@ -107,10 +107,63 @@ export default function ConnectionPage() {
     }
   }
 
+  // Mount-time checks: the effect body only starts module-level reads
+  // (fetch / Firestore client) and updates state inside promise callbacks —
+  // the pattern accepted by react-hooks/set-state-in-effect. The run*
+  // functions above are used by the "Re-run checks" button.
   useEffect(() => {
-    runServerCheck();
-    runClientCheck();
-    runAdminCheck();
+    let on = true;
+    fetch("/api/firebase-status", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((j) => {
+        if (on) setStatus({ loading: false, data: j, error: "" });
+      })
+      .catch((e: any) => {
+        if (on) setStatus({ loading: false, data: null, error: e?.message || "Status check failed" });
+      });
+    Promise.all([
+      getProducts(),
+      getCategories(),
+      getDocData("siteSettings", "main").catch(() => null),
+      getDocData("homepage", "content").catch(() => null),
+    ])
+      .then(([prods, cats, site, home]) => {
+        if (!on) return;
+        setClientCheck({
+          products: prods.length,
+          categories: cats.length,
+          siteSettings: !!site,
+          homepage: !!home,
+          error: "",
+        });
+      })
+      .catch((e: any) => {
+        if (!on) return;
+        console.error(e);
+        setClientCheck({ products: -1, categories: -1, siteSettings: false, homepage: false, error: e?.message || "Client Firestore read failed — check Firestore rules / login." });
+      });
+    Promise.all(
+      ADMIN_COLLECTIONS.map(async (name) => {
+        try {
+          const snap = await getDocs(query(collection(db, name), limit(1)));
+          return { name, ok: true, detail: snap.empty ? "readable (empty)" : "readable" };
+        } catch (e: any) {
+          const code = String(e?.code || "");
+          return {
+            name,
+            ok: false,
+            detail: code.includes("permission-denied")
+              ? "permission denied for this signed-in account"
+              : e?.message || "unreadable",
+          };
+        }
+      })
+    ).then((results) => {
+      if (on) setAdminCheck(results);
+    });
+    return () => {
+      on = false;
+    };
   }, []);
 
   const d = status.data;

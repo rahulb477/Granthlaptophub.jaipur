@@ -285,7 +285,7 @@ export default function HomepageCMSPage() {
           {/* Spotlight / Deal of the Day Selection */}
           <div className="adm-card p-5 space-y-4">
             <h2 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2">
-              Today's Spotlight (Deal of the Day)
+              Today&apos;s Spotlight (Deal of the Day)
             </h2>
 
             <div>

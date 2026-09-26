@@ -54,7 +54,9 @@ export default function AdminUsersPage() {
   const maySee = canManageAdminsFor(user?.uid, myRole);
 
   const [rows, setRows] = useState<FirestoreAdminUser[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [fetching, setFetching] = useState(true);
+  /** Non-super-admins never fetch the admin list, so no spinner for them. */
+  const loading = fetching && maySee;
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [busy, setBusy] = useState(false);
@@ -77,7 +79,7 @@ export default function AdminUsersPage() {
   const [checking, setChecking] = useState(false);
 
   const loadAll = useCallback(async () => {
-    setLoading(true);
+    setFetching(true);
     setError("");
     try {
       setRows(await getAdminUsers());
@@ -88,14 +90,37 @@ export default function AdminUsersPage() {
           : err?.message || "Could not load administrators."
       );
     } finally {
-      setLoading(false);
+      setFetching(false);
     }
   }, []);
 
+  // Mount-time load (super admins only): only starts the module-level
+  // Firestore read; state is updated inside the promise callbacks (the
+  // pattern accepted by react-hooks/set-state-in-effect). Handlers use loadAll.
   useEffect(() => {
-    if (maySee) loadAll();
-    else setLoading(false);
-  }, [maySee, loadAll]);
+    if (!maySee) return;
+    let on = true;
+    getAdminUsers()
+      .then((r) => {
+        if (!on) return;
+        setError("");
+        setRows(r);
+      })
+      .catch((err: any) => {
+        if (!on) return;
+        setError(
+          String(err?.code || "").includes("permission-denied")
+            ? "Missing permissions to read /adminUsers. Only a Super Admin can view administrator accounts."
+            : err?.message || "Could not load administrators."
+        );
+      })
+      .finally(() => {
+        if (on) setFetching(false);
+      });
+    return () => {
+      on = false;
+    };
+  }, [maySee]);
 
   const flash = (m: string) => {
     setSuccess(m);

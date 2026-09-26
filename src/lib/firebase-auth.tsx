@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { User, onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, AUTHORIZED_ADMIN_UID } from "./firebase";
 import { doc, getDoc } from "firebase/firestore";
@@ -46,19 +46,16 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
   const [denyReason, setDenyReason] = useState<"" | "inactive" | "not-admin">("");
 
   // waitForAuth resolves once onAuthStateChanged has fired its first event.
-  const initRef = useRef<{
-    promise: Promise<User | null>;
-    resolve: (u: User | null) => void;
-    resolved: boolean;
-  } | null>(null);
-  if (!initRef.current) {
+  // A single stable object created once per provider instance via a lazy
+  // state initializer — no refs are read or written during render.
+  const [authWait] = useState(() => {
     let resolve: (u: User | null) => void = () => {};
     const promise = new Promise<User | null>((r) => {
       resolve = r;
     });
-    initRef.current = { promise, resolve, resolved: false };
-  }
-  const waitForAuth = () => initRef.current!.promise;
+    return { promise, resolve, resolved: false };
+  });
+  const waitForAuth = useCallback(() => authWait.promise, [authWait]);
 
   // ITEM 5 — persistence across reloads. Called once on mount; failures are
   // non-fatal (session works in-memory, just won't survive a reload in this
@@ -71,9 +68,9 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     const unsub = onAuthStateChanged(auth, async (currentUser) => {
       // CRITICAL: notify waitForAuth on the FIRST event only — the loading
       // flag below handles every subsequent event.
-      if (!initRef.current!.resolved) {
-        initRef.current!.resolved = true;
-        initRef.current!.resolve(currentUser);
+      if (!authWait.resolved) {
+        authWait.resolved = true;
+        authWait.resolve(currentUser);
       }
 
       setUser(currentUser);
@@ -161,8 +158,7 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => unsub();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [authWait]);
 
   const getIdToken = async () => {
     const u = auth.currentUser;
@@ -179,7 +175,8 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo<AdminAuthContextType>(
     () => ({ user, loading, isAdmin, role, adminName, getIdToken, waitForAuth, denyReason, logout }),
-    [user, loading, isAdmin, role, adminName, denyReason]
+    // waitForAuth is stable (useCallback over the stable authWait holder).
+    [user, loading, isAdmin, role, adminName, denyReason, waitForAuth]
   );
 
   return <AdminAuthContext.Provider value={value}>{children}</AdminAuthContext.Provider>;

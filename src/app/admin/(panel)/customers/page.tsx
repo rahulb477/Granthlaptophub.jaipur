@@ -78,9 +78,30 @@ export default function CustomersPage() {
     }
   }, []);
 
+  // Mount-time load: only starts the module-level Firestore reads; state is
+  // updated inside the promise callbacks (the pattern accepted by
+  // react-hooks/set-state-in-effect). The refresh handler uses loadData.
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    let on = true;
+    Promise.all([getAllCustomers(), getAllCustomerOrders()])
+      .then(([usersList, ordersList]) => {
+        if (!on) return;
+        setError("");
+        setCustomers(usersList);
+        setOrders(ordersList);
+      })
+      .catch((err: any) => {
+        if (!on) return;
+        console.error("Customers error:", err);
+        setError(err?.message || "Could not read customers from Firestore.");
+      })
+      .finally(() => {
+        if (on) setLoading(false);
+      });
+    return () => {
+      on = false;
+    };
+  }, []);
 
   /** Orders grouped per customer UID — computed from real order documents. */
   const ordersByUser = useMemo(() => {

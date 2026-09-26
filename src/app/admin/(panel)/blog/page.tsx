@@ -30,8 +30,24 @@ export default function BlogAdminPage() {
     }
   };
 
+  // Mount-time load: only starts the module-level Firestore read; state is
+  // updated inside the promise callbacks (the pattern accepted by
+  // react-hooks/set-state-in-effect). The save/delete handlers use loadAll.
   useEffect(() => {
-    loadAll();
+    let on = true;
+    getBlogPosts()
+      .then((data) => {
+        if (on) setPosts(data);
+      })
+      .catch((err: any) => {
+        if (on) setError("Load error: " + err.message);
+      })
+      .finally(() => {
+        if (on) setLoading(false);
+      });
+    return () => {
+      on = false;
+    };
   }, []);
 
   const openNew = () => {
@@ -116,7 +132,7 @@ export default function BlogAdminPage() {
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#B88900]">Granth Laptop Hub</p>
           <h1 className="text-2xl font-extrabold tracking-tight text-[#111827]">Tech Tips & Guides (Blog CMS)</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            Manages documents in Firestore <code className="text-slate-700">/blogPosts</code> · Customer website reads with <code className="text-slate-700">where("published", "==", true)</code>
+            Manages documents in Firestore <code className="text-slate-700">/blogPosts</code> · Customer website reads with <code className="text-slate-700">where(&quot;published&quot;, &quot;==&quot;, true)</code>
           </p>
         </div>
 

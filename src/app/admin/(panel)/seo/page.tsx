@@ -279,9 +279,9 @@ export default function SeoPage() {
               The storefront reads this document live. Everything below updates without a redeploy.
             </p>
             <div className="rounded-lg bg-slate-50 border border-slate-200 p-3 space-y-1.5 font-mono text-[11px]">
-              <p className="text-slate-400">// Option A — one public endpoint (recommended)</p>
+              <p className="text-slate-400">{`// Option A — one public endpoint (recommended)`}</p>
               <p>GET /api/public/site-config</p>
-              <p className="text-slate-400 pt-1.5">// Option B — read Firestore directly</p>
+              <p className="text-slate-400 pt-1.5">{`// Option B — read Firestore directly`}</p>
               <p>getDoc(doc(db, &quot;siteSettings&quot;, &quot;seo&quot;))</p>
             </div>
             <div className="rounded-lg border border-slate-200 p-3">

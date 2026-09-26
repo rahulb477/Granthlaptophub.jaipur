@@ -54,9 +54,35 @@ export default function ReviewsAdminPage() {
     }
   }, []);
 
+  // Mount-time load: only starts the module-level Firestore read; state is
+  // updated inside the promise callbacks (the pattern accepted by
+  // react-hooks/set-state-in-effect). The moderation handlers use loadAll.
   useEffect(() => {
-    loadAll();
-  }, [loadAll]);
+    let on = true;
+    getNormalizedReviews()
+      .then(({ reviews: rows, lookupWarning }) => {
+        if (!on) return;
+        setError("");
+        setWarning("");
+        rows.sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
+        setReviews(rows);
+        if (lookupWarning) setWarning(lookupWarning);
+      })
+      .catch((err: any) => {
+        if (!on) return;
+        setError(
+          String(err?.code || "").includes("permission-denied")
+            ? "Missing permissions to read /reviews. Sign in with an admin account."
+            : err?.message || "Could not load reviews from Firestore."
+        );
+      })
+      .finally(() => {
+        if (on) setLoading(false);
+      });
+    return () => {
+      on = false;
+    };
+  }, []);
 
   const flash = (msg: string) => {
     setSuccess(msg);
